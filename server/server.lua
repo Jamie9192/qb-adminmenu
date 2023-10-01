@@ -2,15 +2,13 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local frozen = false
 local permissions = {
-    ['kill'] = {
-        minRank = 'admin',
-        event = function(player)
+    ['kill'] = { minRank = 'admin',
+        event = function(src, player)
             TriggerClientEvent('hospital:client:KillPlayer', player.id)
         end,
     },
-    ['ban'] = {
-        minRank = 'admin',
-        event = function(player, time, reason)
+    ['ban'] = { minRank = 'admin',
+        event = function(src, player, time, reason)
             time = tonumber(time)
             local banTime = tonumber(os.time() + time)
             banTime = banTims > 2147483647 and 2147483647 or banTime
@@ -35,46 +33,40 @@ local permissions = {
             DropPlayer(player.id, Lang:t("info.banned") .. '\n' .. reason .. Lang:t("info.ban_expires") .. timeTable['day'] .. '/' .. timeTable['month'] .. '/' .. timeTable['year'] .. ' ' .. timeTable['hour'] .. ':' .. timeTable['min'] .. '\n🔸 Check our Discord for more information: ' .. QBCore.Config.Server.Discord)
         end,
     },
-    ['kick'] = {
-        minRank = 'admin',
-        event = function(player, reason)
+    ['kick'] = { minRank = 'admin',
+        event = function(src, player, reason)
             TriggerEvent('qb-log:server:CreateLog', 'bans', 'Player Kicked', 'red', string.format('%s was kicked by %s for %s', GetPlayerName(player.id), GetPlayerName(src), reason), true)
             DropPlayer(player.id, Lang:t("info.kicked_server") .. ':\n' .. reason .. '\n\n' .. Lang:t("info.check_discord") .. QBCore.Config.Server.Discord)
         end,
     },
-    ["revive"] = {
-        minRank = "admin",
-        event = function(player)
+    ["revive"] = { minRank = "admin",
+        event = function(src, player)
             TriggerClientEvent('hospital:client:Revive', player.id)
         end,
     },
-    ["freeze"] = {
-        minRank = "admin",
-        event = function(player)
+    ["freeze"] = { minRank = "admin",
+        event = function(src, player)
             local target = GetPlayerPed(player.id)
             FreezeEntityPosition(target, not frozen)
             frozen = not frozen
         end,
     },
-    ["goto"] = {
-        minRank = "admin",
-        event = function(player)
+    ["goto"] = { minRank = "admin",
+        event = function(src, player)
             local admin = GetPlayerPed(src)
             local coords = GetEntityCoords(GetPlayerPed(player.id))
             SetEntityCoords(admin, coords)
         end,
     },
-    ["spectate"] = {
-        minRank = "admin",
-        event = function(player)
+    ["spectate"] = { minRank = "admin",
+        event = function(src, player)
             local targetped = GetPlayerPed(player.id)
             local coords = GetEntityCoords(targetped)
             TriggerClientEvent('qb-admin:client:spectate', src, player.id, coords)
         end,
     },
-    ["intovehicle"] = {
-        minRank = "admin",
-        event = function(player)
+    ["intovehicle"] = { minRank = "admin",
+        event = function(src, player)
             local admin = GetPlayerPed(src)
             local targetPed = GetPlayerPed(player.id)
             local vehicle = GetVehiclePedIsIn(targetPed,false)
@@ -91,30 +83,26 @@ local permissions = {
             TriggerClientEvent('QBCore:Notify', src, Lang:t("sucess.entered_vehicle"), 'success', 5000)
         end,
     },
-    ["bring"] = {
-        minRank = "admin",
-        event = function(player)
+    ["bring"] = { minRank = "admin",
+        event = function(src, player)
             local admin = GetPlayerPed(src)
             local coords = GetEntityCoords(admin)
             local target = GetPlayerPed(player.id)
             SetEntityCoords(target, coords)
         end,
     },
-    ["inventory"] = {
-        minRank = "admin",
-        event = function(player)
+    ["inventory"] = { minRank = "admin",
+        event = function(src, player)
             TriggerClientEvent('qb-admin:client:inventory', src, player.id)
         end,
     },
-    ["cloth"] = {
-        minRank = "admin",
-        event = function(player)
+    ["cloth"] = { minRank = "admin",
+        event = function(src, player)
             TriggerClientEvent('qb-clothing:client:openMenu', player.id)
         end,
     },
-    ["SaveCar"] = {
-        minRank = "admin",
-        event = function(mods, vehicle, _, plate)
+    ["SaveCar"] = { minRank = "admin",
+        event = function(src, mods, vehicle, _, plate)
         local Player = QBCore.Functions.GetPlayer(src)
         local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
         if result[1] ~= nil then return TriggerClientEvent('QBCore:Notify', src, Lang:t("error.failed_vehicle_owner"), 'error', 3000) end
@@ -130,9 +118,8 @@ local permissions = {
             TriggerClientEvent('QBCore:Notify', src, Lang:t("success.success_vehicle_owner"), 'success', 5000)
         end,
     },
-    ["SendReport"] = {
-        minRank = "admin",
-        event = function()
+    ["SendReport"] = { minRank = "admin",
+        event = function(src)
             if QBCore.Functions.IsOptin(src) then
                 TriggerClientEvent('chat:addMessage', src, {
                     color = {255, 0, 0},
@@ -142,15 +129,14 @@ local permissions = {
             end
         end,
     },
-    ["GetPlayersForBlips"] = {
-        minRank = "admin",
-        event = function()
+    ["GetPlayersForBlips"] = { minRank = "admin",
+        event = function(src)
+            players = players or {}
             TriggerClientEvent('qb-admin:client:Show', src, players)
         end,
     },
-    ["setPermission"] = {
-        minRank = "god",
-        event = function(targetId, group)
+    ["setPermission"] = { minRank = "god",
+        event = function(src, targetId, group)
             QBCore.Functions.AddPermission(targetId, group[1].rank)
             TriggerClientEvent('QBCore:Notify', targetId, Lang:t("info.rank_level")..group[1].label)
         end,
@@ -183,8 +169,8 @@ local function BanPlayer(src)
 end
 
 local function hasPermissionToUse(src, permission, ...)
-    if not  QBCore.Functions.HasPermission(src, "god") or QBCore.Functions.HasPermission(src, permissions[permission]?.minRank) or IsPlayerAceAllowed(src, 'command')  then return BanPlayer(src) end
-    return permissions[permission].event(...)
+    if not (QBCore.Functions.HasPermission(src, "god") or QBCore.Functions.HasPermission(src, permissions[permission]?.minRank) or IsPlayerAceAllowed(src, 'command')) then return BanPlayer(src) end
+    return permissions[permission].event(src, ...)
 end
 
 for k, v in pairs(permissions) do
